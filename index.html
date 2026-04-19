@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFScan — Multi-Level Fake News Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+
+<nav>
+  <a class="logo" href="#home"><div class="logo-dot"></div>MFScan</a>
+  <ul class="nav-links">
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#labels">Labels</a></li>
+    <li><a href="#dataset">Dataset</a></li>
+    <li><a href="#architecture">Model</a></li>
+    <li><a href="#team">Team</a></li>
+  </ul>
+  <div class="nav-pill">v2.0 · CNN + Bi-LSTM · WELFake + Custom</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="home">
+  <div class="hero-glow-1"></div>
+  <div class="hero-glow-2"></div>
+  <div class="grid-lines"></div>
+  <div class="badge"><div class="badge-dot"></div>Multi-Level Fake News Detection · Group 8 · KITS Warangal</div>
+  <h1 class="hero-title">Truth has<br><span class="grad">four shades.</span></h1>
+  <p class="hero-sub">
+    Beyond binary — our <strong>CNN + Bi-LSTM</strong> model trained on the actual
+    <strong>WELFake dataset (72K articles)</strong> combined with
+    <strong>custom Indian/health/science data</strong> classifies news into
+    FAKE, MISLEADING, PARTIALLY REAL, and REAL with Explainable AI.
+  </p>
+  <div class="hero-btns">
+    <a href="#demo" class="btn-primary">Analyze an Article →</a>
+    <a href="#how" class="btn-ghost">How It Works</a>
+  </div>
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="stat-num">~92%</div><div class="stat-lbl">Model Accuracy</div></div>
+    <div class="stat-cell"><div class="stat-num">72K</div><div class="stat-lbl">WELFake Articles</div></div>
+    <div class="stat-cell"><div class="stat-num">225+</div><div class="stat-lbl">Custom Samples</div></div>
+    <div class="stat-cell"><div class="stat-num">35</div><div class="stat-lbl">Fact DB Entries</div></div>
+    <div class="stat-cell"><div class="stat-num">8K+</div><div class="stat-lbl">Learned Words</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- DEMO -->
+<div class="demo-wrap" id="demo">
+  <div class="sec-tag">Interactive Demo</div>
+  <h2 class="sec-title">Try It Yourself</h2>
+  <p class="sec-desc" style="margin-bottom:28px">
+    Enter any news headline or article text. 
+  </p>
+  <div class="demo-frame">
+    <div class="frame-bar">
+      <div class="mac-dots">
+        <div class="mac-dot"></div><div class="mac-dot"></div><div class="mac-dot"></div>
+      </div>
+     <div class="frame-label">MFScan</div>
+    </div> 
+    <div class="demo-grid">
+      <div>
+        <div class="field-label">Input — Headline or Article</div>
+        <textarea class="textarea" id="newsInput"
+          placeholder="Paste any news headline or article here…&#10;&#10;Examples:&#10;• Scientists confirm drinking coffee cures cancer&#10;• ISRO launches satellite into geostationary orbit&#10;• Government announces Rs 10000 monthly salary for all citizens"></textarea>
+        <div class="samples">
+          <button class="sample-tag" onclick="setSample(0)">🔴 Health fake</button>
+          <button class="sample-tag" onclick="setSample(1)">🔴 Gov scheme fake</button>
+          <button class="sample-tag" onclick="setSample(2)">🟢 Sports real</button>
+          <button class="sample-tag" onclick="setSample(3)">🟢 Finance real</button>
+          <button class="sample-tag" onclick="setSample(4)">🟢 ISRO real</button>
+          <button class="sample-tag" onclick="setSample(5)">🔴 Conspiracy</button>
+          <button class="sample-tag" onclick="setSample(6)">🟠 Misleading</button>
+          <button class="sample-tag" onclick="setSample(7)">🟢 WHO real</button>
+        </div>
+        <button class="run-btn" onclick="analyze()" id="analyzeBtn">
+          <div class="spinner" id="spinner"></div>
+          <span id="btnText">⚡ Analyze Now</span>
+        </button>
+      </div>
+
+      <div class="result-side">
+        <div class="result-empty" id="emptyState">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+          </svg>
+          Analysis results will appear here
+        </div>
+        <div class="result-cards" id="resultCards">
+          <div class="verdict-card" id="verdictCard">
+            <div class="v-icon" id="vIcon"></div>
+            <div><div class="v-label" id="vLabel"></div><div class="v-meta" id="vMeta"></div></div>
+          </div>
+          <div class="binary-bar-box">
+            <div class="box-title">Raw Model Output — P(FAKE) vs P(REAL)</div>
+            <div class="brow">
+              <span class="bname" style="color:var(--fake)">P(FAKE)</span>
+              <div class="btrack"><div class="bfill" id="barFake" style="background:var(--fake)"></div></div>
+              <span class="bval" id="valFake">—</span>
+            </div>
+            <div class="brow">
+              <span class="bname" style="color:var(--real)">P(REAL)</span>
+              <div class="btrack"><div class="bfill" id="barReal" style="background:var(--real)"></div></div>
+              <span class="bval" id="valReal">—</span>
+            </div>
+          </div>
+          <div class="band-box">
+            <div class="box-title">4-Level Threshold Mapping (Cell 16)</div>
+            <div class="band-row" id="band-FAKE">
+              <span class="band-name">🔴 FAKE <span class="band-tag chip-r" style="display:none">predicted</span></span>
+              <span style="font-size:.68rem;color:var(--muted)">P(fake) ≥ 0.75</span>
+            </div>
+            <div class="band-row" id="band-MISLEADING">
+              <span class="band-name">🟠 MISLEADING <span class="band-tag chip-r" style="display:none">predicted</span></span>
+              <span style="font-size:.68rem;color:var(--muted)">0.55 ≤ P(fake) &lt; 0.75</span>
+            </div>
+            <div class="band-row" id="band-PARTIALLY_REAL">
+              <span class="band-name">🟡 PARTIALLY REAL <span class="band-tag chip-y" style="display:none">predicted</span></span>
+              <span style="font-size:.68rem;color:var(--muted)">borderline zone</span>
+            </div>
+            <div class="band-row" id="band-REAL">
+              <span class="band-name">🟢 REAL <span class="band-tag chip-g" style="display:none">predicted</span></span>
+              <span style="font-size:.68rem;color:var(--muted)">P(real) ≥ 0.75</span>
+            </div>
+          </div>
+          <div class="xai-box">
+            <div class="box-title">XAI — Word Attribution (LIME / Occlusion)</div>
+            <div class="chip-wrap" id="chipWrap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="sec-tag">Pipeline</div>
+  <h2 class="sec-title">How It Works</h2>
+  <p class="sec-desc">Six stages .</p>
+  <div class="pipeline">
+    <div class="pipe-card" data-n="1">
+      <div class="pipe-icon">📥</div>
+      <div class="pipe-name">Input Ingestion</div>
+      <div class="pipe-desc">Accepts headlines, paragraphs, or article URLs. For URLs, newspaper3k extracts content with BeautifulSoup as fallback (Cell 18).</div>
+    </div>
+    <div class="pipe-card" data-n="2">
+      <div class="pipe-icon">🔧</div>
+      <div class="pipe-name">NLP Preprocessing</div>
+      <div class="pipe-desc">lowercase → strip URLs/numbers/punctuation → Porter stemming → remove stopwords. Negations (not, never, nor) are preserved.</div>
+    </div>
+    <div class="pipe-card" data-n="3">
+      <div class="pipe-icon">🗂️</div>
+      <div class="pipe-name">Fact DB Override</div>
+      <div class="pipe-desc">35 hard-coded facts checked by keyword overlap ≥ 60%. Instant FAKE/REAL verdict — model is skipped for these known claims.</div>
+    </div>
+    <div class="pipe-card" data-n="4">
+      <div class="pipe-icon">🧠</div>
+      <div class="pipe-name">CNN + Bi-LSTM</div>
+      <div class="pipe-desc">Two Conv1D layers (128+64 filters) extract n-gram features. Two Bidirectional LSTMs capture context. Sigmoid outputs P(REAL).</div>
+    </div>
+    <div class="pipe-card" data-n="5">
+      <div class="pipe-icon">📊</div>
+      <div class="pipe-name">4-Level Mapping</div>
+      <div class="pipe-desc">P(fake)≥0.75→FAKE · ≥0.55→MISLEADING · P(real)≥0.75→REAL · else→PARTIALLY REAL. Thresholds FAKE_HIGH, FAKE_LOW, REAL_HIGH from Config.</div>
+    </div>
+    <div class="pipe-card" data-n="6">
+      <div class="pipe-icon">🔍</div>
+      <div class="pipe-name">Explainable AI</div>
+      <div class="pipe-desc"> LIME highlights which words drove the prediction. Occlusion fallback when LIME fails. ↑ red = pushes toward FAKE · ↓ green = toward REAL.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- LABELS -->
+<section id="labels">
+  <div class="sec-tag">Classification System</div>
+  <h2 class="sec-title">Beyond Binary</h2>
+  <p class="sec-desc">Four levels reflecting how misinformation actually exists — from outright fabrication to borderline reporting.</p>
+  <div class="labels-grid">
+    <div class="lcard lf">
+      <div class="licon">🔴</div>
+      <div>
+        <div class="ltitle" style="color:var(--fake)">FAKE</div>
+        <div class="ldesc">Deliberately fabricated. Sensational language, conspiracy signals, or matches a Fact DB entry. P(fake) ≥ 0.75 from the CNN + Bi-LSTM model (cfg.FAKE_HIGH).</div>
+      </div>
+    </div>
+    <div class="lcard lm">
+      <div class="licon">🟠</div>
+      <div>
+        <div class="ltitle" style="color:var(--mislead)">MISLEADING</div>
+        <div class="ldesc">May have a factual kernel but uses deceptive framing or missing context to create a false impression. 0.55 ≤ P(fake) &lt; 0.75 (cfg.FAKE_LOW).</div>
+      </div>
+    </div>
+    <div class="lcard lp">
+      <div class="licon">🟡</div>
+      <div>
+        <div class="ltitle" style="color:var(--partial)">PARTIALLY REAL</div>
+        <div class="ldesc">Genuinely borderline — model is uncertain. Typically early breaking news, unconfirmed claims, or content mixing real and speculative elements.</div>
+      </div>
+    </div>
+    <div class="lcard lr">
+      <div class="licon">🟢</div>
+      <div>
+        <div class="ltitle" style="color:var(--real)">REAL</div>
+        <div class="ldesc">Verified, well-sourced reporting with named officials, institutional attribution, or data citations. P(real) ≥ 0.75 from model (cfg.REAL_HIGH).</div>
+      </div>
+    </div>
+  </div>
+  <div class="thresh-table">
+    <table>
+      <thead><tr><th>Label</th><th>Condition (Cell 16)</th><th>Config</th></tr></thead>
+      <tbody>
+        <tr><td>🔴 FAKE</td><td>P(fake) ≥ 0.75</td><td>cfg.FAKE_HIGH = 0.75</td></tr>
+        <tr><td>🟠 MISLEADING</td><td>0.55 ≤ P(fake) &lt; 0.75</td><td>cfg.FAKE_LOW = 0.55</td></tr>
+        <tr><td>🟡 PARTIALLY REAL</td><td>P(fake) &lt; 0.55 and P(real) &lt; 0.75</td><td>borderline zone</td></tr>
+        <tr><td>🟢 REAL</td><td>P(real) ≥ 0.75</td><td>cfg.REAL_HIGH = 0.75</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- DATASET -->
+<section id="dataset">
+  <div class="sec-tag">Training Data</div>
+  <h2 class="sec-title">Two-Source Training</h2>
+  <p class="sec-desc">WELFake handles US political/media fake news. The custom dataset covers Indian, health, science and government misinformation — preventing the model from labelling "coffee cures cancer" as REAL.</p>
+  <div class="dataset-grid">
+    <div class="ds-card">
+      <div class="ds-num">72K</div>
+      <div class="ds-title">WELFake Dataset</div>
+      <div class="ds-desc">30K articles sampled . Covers US political and media fake news. Label 1=FAKE, Label 0=REAL. Sourced from Reuters, NYT, Breitbart, InfoWars.</div>
+      <div class="ds-cats"><span class="cat-chip">Politics</span><span class="cat-chip">Media</span><span class="cat-chip">US Elections</span><span class="cat-chip">Social Media</span></div>
+    </div>
+    <div class="ds-card">
+      <div class="ds-num">125+</div>
+      <div class="ds-title">Custom Fake Articles </div>
+      <div class="ds-desc">Hand-written fake articles across 8 domains, augmented 4× via word-swap (Cell 5). Label 0=FAKE in custom dataset. Teaches Indian fake news patterns.</div>
+      <div class="ds-cats"><span class="cat-chip">Health myths</span><span class="cat-chip">Gov schemes</span><span class="cat-chip">Science/Tech</span><span class="cat-chip">Sports</span><span class="cat-chip">Conspiracy</span><span class="cat-chip">Finance</span></div>
+    </div>
+    <div class="ds-card">
+      <div class="ds-num">100+</div>
+      <div class="ds-title">Custom Real Articles </div>
+      <div class="ds-desc">Hand-written real news mirroring ISRO, RBI, BCCI, WHO announcements. Augmented 4×. Label 1=REAL in custom dataset.</div>
+      <div class="ds-cats"><span class="cat-chip">ISRO/Science</span><span class="cat-chip">Parliament</span><span class="cat-chip">Sports</span><span class="cat-chip">Finance/RBI</span><span class="cat-chip">G20/BRICS</span><span class="cat-chip">WHO</span></div>
+    </div>
+    <div class="ds-card">
+      <div class="ds-num">35</div>
+      <div class="ds-title">Fact Database </div>
+      <div class="ds-desc">Hard-coded known facts checked by 60% keyword overlap. Instant model-free verdicts for health myths, sports records, government schemes, conspiracies.</div>
+      <div class="ds-cats"><span class="cat-chip">Sports records</span><span class="cat-chip">Health myths</span><span class="cat-chip">Gov schemes</span><span class="cat-chip">Conspiracy</span><span class="cat-chip">Finance</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="sec-tag">Model Architecture </div>
+  <h2 class="sec-title">CNN + Bi-LSTM</h2>
+  <p class="sec-desc">Binary sigmoid output — two Conv1D layers (128+64 filters), vocab=20K, 8 epochs, early stopping. P(REAL) from sigmoid is mapped to 4 levels using Cell 16 thresholds.</p>
+  <div class="arch-diagram">
+    <div class="arch-row">
+      <div class="arch-block hl"><div class="ab-name">Input Text</div><div class="ab-sub">headline / article / URL</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block"><div class="ab-name">Embedding</div><div class="ab-sub">dim=128, vocab=20k</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block"><div class="ab-name">Conv1D × 2</div><div class="ab-sub">128 filters k=4 · 64 filters k=3</div></div>
+    </div>
+    <div class="arch-down">↓</div>
+    <div class="arch-row">
+      <div class="arch-block"><div class="ab-name">Bi-LSTM Layer 1</div><div class="ab-sub">units=64, return_seq=True</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block"><div class="ab-name">Bi-LSTM Layer 2</div><div class="ab-sub">units=32</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block"><div class="ab-name">Dense 64 + Dropout</div><div class="ab-sub">ReLU · rate 0.4 + 0.3</div></div>
+    </div>
+    <div class="arch-down">↓</div>
+    <div class="arch-row">
+      <div class="arch-block"><div class="ab-name">Sigmoid(1)</div><div class="ab-sub">P(REAL) output</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block"><div class="ab-name">P(fake) = 1 − P(real)</div><div class="ab-sub">Cell 16</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-block hl"><div class="ab-name">4-Level Label</div><div class="ab-sub">FAKE · MISLEAD · PARTIAL · REAL</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TEAM -->
+<div class="team-wrap" id="team">
+  <div class="sec-tag">Group 8 — KITS Warangal</div>
+  <h2 class="sec-title">The Team</h2>
+  <p class="sec-desc">VI Semester — Department of Information Technology, Kakatiya Institute of Technology &amp; Science, Warangal, Telangana.</p>
+  <div class="team-grid">
+    <div class="tcard"><div class="tavatar">KS</div><div class="tname">Katakam Sai Akshay</div><div class="troll">B23IT077</div></div>
+    <div class="tcard"><div class="tavatar">BP</div><div class="tname">Botla Pavan</div><div class="troll">B23IT123</div></div>
+    <div class="tcard"><div class="tavatar">MA</div><div class="tname">Mohammed Abdul Gafoor</div><div class="troll">B23IT089</div></div>
+    <div class="tcard"><div class="tavatar">MO</div><div class="tname">Mohiuddin</div><div class="troll">B23IT071</div></div>
+  </div>
+  <div class="guide-card">
+    <div class="guide-icon">👩‍🏫</div>
+    <div>
+      <div class="guide-name">Project Guide</div>
+      <div class="guide-sub">Supervised under Dr. B Shruthi — Assistant Professor, Dept. of IT</div>
+      <div class="guide-sub2">Smt. M. Swetha Rani (Seminar Coordinator) &amp; Dr. T. Senthil Murugan (Assoc. Prof. &amp; Head, Dept. of IT)</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<footer>
+  <div class="foot-left">
+    <strong>MFScan</strong> — Multi-Level Fake News Detection<br>
+    Group 8 · VI Semester · KITS Warangal · 2024–25
+  </div>
+  <div class="foot-chips">
+    <span class="fchip">TensorFlow</span>
+    <span class="fchip">CNN + Bi-LSTM</span>
+    <span class="fchip">LIME XAI</span>
+    <span class="fchip">WELFake</span>
+    <span class="fchip">Custom Dataset</span>
+    <span class="fchip">newspaper3k</span>
+    <span class="fchip">Python 3</span>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
